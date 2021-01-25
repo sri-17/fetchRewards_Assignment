@@ -1,0 +1,28 @@
+# This YAML configuration specifies a server with two volumes and two users
+server:
+  instance_type: t2.micro
+  ami_type: amzn2
+  ImageId : ami-0a0ad6b70e61be944
+  architecture: x86_64
+  root_device_type: ebs
+  virtualization_type: hvm
+  min_count: 1
+  max_count: 1
+  Email: srivamshik17@gmail.com
+  Tags:
+    - Key: "Name"
+      Value: "DEV"
+  volumes:
+    - device: /dev/xvda
+      size_gb: 10
+      type: ext4
+      mount: /
+    - device: /dev/xvdf
+      size_gb: 100
+      type: xfs
+      mount: /data
+  users:
+    - login: user1
+      user1_ssh_key: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDy8Br+kFXCOUjzrhnIEzeD8C4/DNZpwICzNNGj58L4J9csxIER6maELV+tiiMnYJYaDkb1UdY1PXfKZR2ItFyTOpHAsgbhGXztkTdyN2P9Ka056XAaKrY+95hJ7ji5QfvRKK3vWEttclDW3hcDzqmghgTdLJ8qQQ32QlgEQmtvdlYOAE0DxUMHwO1CBSVuiCkOQYFFr4L1cSmFWEpXIBtKAviZIs9ld9VOf/jYaviB//Pe92hNZM/afWuyTTdJFt2eZ0I6oQEYCLbAg1NoAJ5QfPJXZiIYyaJqXdfP1zylC1xgkB8JTSVO41cuyMKh3y4JIUzffmRlPyyqihVJOvI3 user1@ip-172-31-45-7.us-east-2.compute.internal
+    - login: user2
+      user2_ssh_key: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDBCfHQlAR3dvBAJftkdS+Ovy8Ye+jvWMQi1YbFwObgaBfKqS3rmHO2ELy1jAO9IL6Um3mRUY3Z6l8ksoWVlKBZmyL31EKB66Rb1jjt96JUMqcuRnjiyoAYdgsjQCZiejg5UyWf6fTXUMWbz3h3luWgcxlpNNP3R+VaLfd1LB8Bv9sUwxI5h8haZZriHT0AN7emodPg32j37tPmWzrcbhXS4j/FZCFMAtTPK/80M30BsnLszsgrqr4Y2I52y2ULOAoSO6wVC32viDbXiWgGYyuhZKxqmZKxKfiIMzE++6afu06vOe68n3tLMInnqdZF1ZOLdT4gql7jOBnK+YnSH/rB user2@ip-172-31-45-7.us-east-2.compute.internal
