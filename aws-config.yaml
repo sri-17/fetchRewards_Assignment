@@ -2,7 +2,7 @@
 server:
   instance_type: t2.micro
   ami_type: amzn2
-  ImageId : ami-0a0ad6b70e61be944
+  region: us-east-2
   architecture: x86_64
   root_device_type: ebs
   virtualization_type: hvm

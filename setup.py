@@ -1,10 +1,17 @@
 import yaml
 import boto3
 import time
+import os
+import subprocess
 
 ec2 = boto3.resource('ec2')
+path = os.getcwd()
+#print('cwd path  :',path)
+yamlpath = os.path.join(os.getcwd(),"aws-config.yaml")
+print('yaml path : ',yamlpath)
 
-with open("/root/Pythoncode/aws-config.yaml", 'r') as stream:
+#Read aws parameter yaml file
+with open(os.path.join(os.getcwd(),"aws-config.yaml"), 'r') as stream:
         try:
            data = yaml.safe_load(stream)
            #print(data)
@@ -12,31 +19,47 @@ with open("/root/Pythoncode/aws-config.yaml", 'r') as stream:
         except yaml.YAMLError as exc:
            print(exc)
 
-user1_authorizedKEY = (data.get('server').get('users'))[0].get('user1_ssh_key')
-#print(user1_authorizedKEY)
-user2_authorizedKEY = (data.get('server').get('users'))[1].get('user2_ssh_key')
-#print(user2_authorizedKEY)
 
-#user data
-myCode = """
-#!/bin/bash
-sudo yum update
-sudo lsblk
-sudo mount -t  ext4 /dev/xvda /
-sudo mkdir /data
-sudo mkfs -t xfs /dev/xvdf
-sudo mount /dev/xvdf /data
-echo "/dev/xvda / auto defaults 0 0" | sudo tee -a /etc/fstab
-echo "/dev/xvdf /data xfs defaults 0 0" | sudo tee -a /etc/fstab
-sudo adduser user1
-sudo adduser user2
-sudo mkdir -p /home/user1/.ssh
-sudo mkdir -p /home/user2/.ssh
-sudo chown -R user1:user1 /home/user1
-sudo chown -R user2:user2 /home/user2
-echo \"%s\" >> /home/user1/.ssh/authorized_keys
-echo \"%s\" >> /home/user2/.ssh/authorized_keys
-"""% (user1_authorizedKEY,user2_authorizedKEY)
+#Creating private and public key for users
+username1 = (data.get('server').get('users'))[0].get('login')
+username2 = (data.get('server').get('users'))[1].get('login')
+print('username1 :',username1)
+print('username2 :',username2)
+
+user1_rsa = username1+"_rsa.pub"
+user2_rsa = username2+"_rsa.pub"
+
+#call generate_userssh.sh
+subprocess.call("./generate_userssh.sh %s %s"%(username1,username2), shell=True)
+user1_authorizedKEY = open(os.path.join(os.getcwd(),user1_rsa), 'r')
+auth1 = user1_authorizedKEY.read()
+#print('auth1---------->',auth1) 	
+user2_authorizedKEY = open(os.path.join(os.getcwd(),user2_rsa), 'r')
+auth2 = user2_authorizedKEY.read()
+#print('auth2----------->',auth2)
+
+#auth1 = (data.get('server').get('users'))[0].get('user1_ssh_key')
+#auth2 = (data.get('server').get('users'))[1].get('user2_ssh_key')
+
+#call userdata.sh 
+mycode = open(os.path.join(os.getcwd(),"userdata.sh"), 'r')
+userdatacode = mycode.read()
+userdatacode = userdatacode.replace("%1",username1).replace("%2",username2).replace("%3",auth1).replace("%4",auth2)
+#print('------')
+#print('userdata :------------->',userdatacode)
+
+#Print ImagId
+instance_amitype = data.get('server').get('ami_type')
+print('instance_amitype',instance_amitype)
+instance_region = data.get('server').get('region')
+print('instance_region',instance_region)
+ec2_instance = boto3.client('ec2', region_name=instance_region)
+response = ec2_instance.describe_instances()
+for reservation in response["Reservations"]:
+    for instance in reservation["Instances"]:
+        new_imageId = instance["ImageId"]
+	#print(instance["ImageId"])
+print('ImageId :',new_imageId)
 
 key = (data.get('server').get('Tags'))[0].get('Key')
 value = (data.get('server').get('Tags'))[0].get('Value')
@@ -45,26 +68,26 @@ tag_purpose_test = {"Key": key, "Value": value}
 #instance creation
 instance = ec2.create_instances(
         InstanceType = data.get('server').get('instance_type'),
-        ImageId = data.get('server').get('ImageId'),
+        ImageId = new_imageId,
         MinCount = data.get('server').get('min_count'),
         MaxCount = data.get('server').get('max_count'),
         KeyName = 'ec2-instance',
-	    TagSpecifications=([{'ResourceType': 'instance','Tags': [tag_purpose_test]}]),
-	    BlockDeviceMappings=[
+	TagSpecifications=([{'ResourceType': 'instance','Tags': [tag_purpose_test]}]),
+	BlockDeviceMappings=[
         {
             'DeviceName' : (data.get('server').get('volumes'))[0].get('device'),
             'Ebs': {
                 'DeleteOnTermination': True,
-                'VolumeSize': 10,
+                'VolumeSize': (data.get('server').get('volumes'))[0].get('size_gb')
             }
         },
         {
             'DeviceName' : (data.get('server').get('volumes'))[1].get('device'),
             'Ebs': {
                 'DeleteOnTermination': True,
-                'VolumeSize': 100,
+                'VolumeSize': (data.get('server').get('volumes'))[1].get('size_gb')
             }
         }
     ],
-	UserData = myCode
+	UserData = userdatacode
 )
