@@ -9,6 +9,7 @@ server:
   min_count: 1
   max_count: 1
   Email: srivamshik17@gmail.com
+  keyname: ec2-instance
   Tags:
     - Key: "Name"
       Value: "DEV"

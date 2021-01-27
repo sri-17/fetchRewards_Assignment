@@ -30,7 +30,7 @@ user1_rsa = username1+"_rsa.pub"
 user2_rsa = username2+"_rsa.pub"
 
 #call generate_userssh.sh
-subprocess.call("./generate_userssh.sh %s %s"%(username1,username2), shell=True)
+subprocess.call("sh generate_userssh.sh %s %s"%(username1,username2), shell=True)
 user1_authorizedKEY = open(os.path.join(os.getcwd(),user1_rsa), 'r')
 auth1 = user1_authorizedKEY.read()
 #print('auth1---------->',auth1) 	
@@ -42,8 +42,8 @@ auth2 = user2_authorizedKEY.read()
 #auth2 = (data.get('server').get('users'))[1].get('user2_ssh_key')
 
 #call userdata.sh 
-mycode = open(os.path.join(os.getcwd(),"userdata.sh"), 'r')
-userdatacode = mycode.read()
+userdatascript = open(os.path.join(os.getcwd(),"userdata.sh"), 'r')
+userdatacode = userdatascript.read()
 userdatacode = userdatacode.replace("%1",username1).replace("%2",username2).replace("%3",auth1).replace("%4",auth2)
 #print('------')
 #print('userdata :------------->',userdatacode)
@@ -71,7 +71,7 @@ instance = ec2.create_instances(
         ImageId = new_imageId,
         MinCount = data.get('server').get('min_count'),
         MaxCount = data.get('server').get('max_count'),
-        KeyName = 'ec2-instance',
+        KeyName = data.get('server').get('keyname'),
 	TagSpecifications=([{'ResourceType': 'instance','Tags': [tag_purpose_test]}]),
 	BlockDeviceMappings=[
         {
